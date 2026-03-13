@@ -155,7 +155,7 @@ class VoiceRecorder {
         // Simple title: use the text directly, trimmed to 100 chars
         const title = text.length > 100 ? text.substring(0, 100) + '...' : text;
 
-        window.TaskDB.add({
+        TaskDB.add({
             title: title,
             description: text,
             date: new Date().toISOString().split('T')[0],
@@ -164,7 +164,7 @@ class VoiceRecorder {
     }
 
     saveExtractedTasks(tasksArray) {
-        const projects = window.ProjectsDB.getAll();
+        const projects = ProjectsDB.getAll();
 
         tasksArray.forEach(t => {
             // Find project ID matching the name, or default to none
@@ -174,7 +174,7 @@ class VoiceRecorder {
                 if (proj) projectId = proj.id;
             }
 
-            window.TaskDB.add({
+            TaskDB.add({
                 title: t.title,
                 description: t.description || "",
                 date: t.date || "",
