@@ -4,6 +4,7 @@
 class VoiceRecorder {
     constructor() {
         this.isRecording = false;
+        this.isProcessing = false; // Prevent double-clicks
 
         // UI Elements
         this.btnRecord = document.getElementById('btn-record');
@@ -24,6 +25,8 @@ class VoiceRecorder {
         if (!this.btnRecord) return;
 
         this.btnRecord.addEventListener('click', () => {
+            if (this.isProcessing) return; // Block double-clicks
+
             if (this.isRecording) {
                 this.stopRecording();
             } else {
@@ -48,7 +51,11 @@ class VoiceRecorder {
             return;
         }
 
+        // Prevent double start
+        if (this.isRecording || this.isProcessing) return;
+
         this.isRecording = true;
+        this.isProcessing = true;
 
         // Update UI to recording state
         this.btnRecord.classList.add('recording');
@@ -59,6 +66,11 @@ class VoiceRecorder {
         this.aiStatusArea.classList.add('hidden');
 
         try {
+            // Stop any previous recognition first (safety)
+            try { window.SpeechService.stop(); } catch(e) {}
+            // Small delay to let previous recognition fully stop
+            await new Promise(r => setTimeout(r, 200));
+
             // Use browser's free speech recognition
             const speechResult = await window.SpeechService.listen('zh-CN');
 
@@ -69,6 +81,7 @@ class VoiceRecorder {
 
             if (!speechResult.text) {
                 this.statusText.textContent = "Tap to talk";
+                this.isProcessing = false;
                 alert("Could not hear anything clearly. Please try again.");
                 return;
             }
@@ -82,19 +95,28 @@ class VoiceRecorder {
             this.statusText.textContent = "Analyzing tasks...";
             this.aiStatusArea.classList.remove('hidden');
 
-            const extractedTasks = await window.AIService.extractTasks(speechResult.text, (status) => {
-                // Show retry/fallback status to the user
-                this.statusText.textContent = status;
-                console.log("AI Status:", status);
-            });
+            try {
+                const extractedTasks = await window.AIService.extractTasks(speechResult.text, (status) => {
+                    this.statusText.textContent = status;
+                    console.log("AI Status:", status);
+                });
 
-            // Process Results
-            if (extractedTasks.length > 0) {
-                this.saveExtractedTasks(extractedTasks);
-                this.addRecentExtraction(speechResult.text, extractedTasks.length);
-                this.statusText.textContent = `Saved ${extractedTasks.length} task(s)!`;
-            } else {
-                this.statusText.textContent = "No tasks detected.";
+                // Process Results
+                if (extractedTasks.length > 0) {
+                    this.saveExtractedTasks(extractedTasks);
+                    this.addRecentExtraction(speechResult.text, extractedTasks.length);
+                    this.statusText.textContent = `Saved ${extractedTasks.length} task(s)!`;
+                } else {
+                    this.statusText.textContent = "No tasks detected.";
+                }
+            } catch (aiErr) {
+                console.warn("AI failed, using local fallback:", aiErr.message);
+
+                // LOCAL FALLBACK: Create task directly from transcription
+                this.statusText.textContent = "AI unavailable, saving as task...";
+                this.createLocalTask(speechResult.text);
+                this.addRecentExtraction(speechResult.text, 1);
+                this.statusText.textContent = "Saved 1 task (AI offline)";
             }
 
         } catch (err) {
@@ -105,9 +127,10 @@ class VoiceRecorder {
             this.statusText.textContent = "Error occurred.";
             alert("Failed to process voice note: " + err.message);
         } finally {
+            this.isProcessing = false;
             this.aiStatusArea.classList.add('hidden');
             setTimeout(() => {
-                if (!this.isRecording) this.statusText.textContent = "Tap to talk";
+                if (!this.isRecording && !this.isProcessing) this.statusText.textContent = "Tap to talk";
             }, 3000);
         }
     }
@@ -123,6 +146,21 @@ class VoiceRecorder {
             this.pulseDot.classList.remove('active');
             this.statusText.textContent = "Processing...";
         }
+    }
+
+    /**
+     * Local fallback: create a simple task from text without AI
+     */
+    createLocalTask(text) {
+        // Simple title: use the text directly, trimmed to 100 chars
+        const title = text.length > 100 ? text.substring(0, 100) + '...' : text;
+
+        window.TaskDB.add({
+            title: title,
+            description: text,
+            date: new Date().toISOString().split('T')[0],
+            projectId: ""
+        });
     }
 
     saveExtractedTasks(tasksArray) {
