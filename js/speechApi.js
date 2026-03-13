@@ -1,77 +1,93 @@
 // speechApi.js
-// Handles Google Cloud Speech-to-Text API
+// Uses FREE browser-native Web Speech API (no Google Cloud needed, no API key needed)
 
 class SpeechAPI {
     constructor() {
-        // API key is read dynamically from CONFIG at call time
-    }
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            console.error("Web Speech API not supported in this browser.");
+            this.supported = false;
+            return;
+        }
+        this.supported = true;
+        this.recognition = new SpeechRecognition();
+        this.recognition.continuous = false;
+        this.recognition.interimResults = false;
+        this.recognition.maxAlternatives = 1;
 
-    get endpoint() {
-        return `https://speech.googleapis.com/v1/speech:recognize?key=${window.CONFIG.API_KEY}`;
+        // Support multiple languages
+        // The browser will auto-detect among these
+        this.recognition.lang = 'zh-CN'; // Primary language
     }
 
     /**
-     * Converts audio base64 to text using Google Speech-to-Text
-     * @param {string} audioBase64 - Base64 encoded audio content (no data URI prefix)
-     * @param {number} sampleRate - Sample rate of the audio (e.g. 48000)
-     * @returns {Promise<string>} - Transcribed text
+     * Start listening and return a promise with the transcribed text
+     * @param {string} lang - Language code (e.g. 'en-US', 'ar-SA', 'zh-CN')
+     * @returns {Promise<{text: string, language: string}>}
      */
-    async transcribe(audioBase64, sampleRate = 48000) {
-        // Request body for Speech API
-        // Using OGG_OPUS or WEBM_OPUS for web recordings, but often browser recordings
-        // are best handled by letting the API auto-detect or using WEBM_OPUS
-
-        const requestBody = {
-            config: {
-                encoding: "WEBM_OPUS",
-                sampleRateHertz: sampleRate,
-                languageCode: "en-US",
-                alternativeLanguageCodes: ["ar-SA", "zh-CN", "ar-AE"], // Auto-detect English, Arabic, Chinese
-                enableAutomaticPunctuation: true
-            },
-            audio: {
-                content: audioBase64
-            }
-        };
-
-        try {
-            const response = await fetch(this.endpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(requestBody)
-            });
-
-            if (!response.ok) {
-                const err = await response.json();
-                console.error("Speech API Error:", err);
-                throw new Error(err.error?.message || "Speech API request failed");
+    listen(lang) {
+        return new Promise((resolve, reject) => {
+            if (!this.supported) {
+                reject(new Error("Speech recognition not supported in this browser."));
+                return;
             }
 
-            const data = await response.json();
+            if (lang) {
+                this.recognition.lang = lang;
+            }
 
-            // Extract transcription
-            if (data.results && data.results.length > 0) {
-                const transcription = data.results
-                    .map(r => r.alternatives[0].transcript)
-                    .join(' ');
+            let resultReceived = false;
 
-                // Also get the language detected
-                const detectedLang = data.results[0].languageCode || "auto";
-                console.log(`Detected Language: ${detectedLang}`);
+            this.recognition.onresult = (event) => {
+                resultReceived = true;
+                const result = event.results[0][0];
+                const text = result.transcript;
+                const confidence = result.confidence;
+                console.log(`Speech recognized: "${text}" (confidence: ${confidence})`);
 
-                return {
-                    text: transcription,
+                // Try to detect what language was actually used
+                let detectedLang = this.recognition.lang;
+                
+                // Simple heuristic: check if text contains Arabic or Chinese characters
+                if (/[\u0600-\u06FF]/.test(text)) {
+                    detectedLang = 'AR-X-GULF';
+                } else if (/[\u4e00-\u9fff]/.test(text)) {
+                    detectedLang = 'CMN-HANS-CN';
+                } else if (/[a-zA-Z]/.test(text)) {
+                    detectedLang = 'EN-US';
+                }
+
+                resolve({
+                    text: text,
                     language: detectedLang
-                };
-            } else {
-                return { text: "", language: "" };
-            }
+                });
+            };
 
-        } catch (error) {
-            console.error("Transcription error:", error);
-            throw error;
+            this.recognition.onerror = (event) => {
+                console.error("Speech recognition error:", event.error);
+                if (event.error === 'no-speech') {
+                    resolve({ text: "", language: "" });
+                } else {
+                    reject(new Error(`Speech recognition error: ${event.error}`));
+                }
+            };
+
+            this.recognition.onend = () => {
+                if (!resultReceived) {
+                    resolve({ text: "", language: "" });
+                }
+            };
+
+            this.recognition.start();
+        });
+    }
+
+    /**
+     * Stop listening
+     */
+    stop() {
+        if (this.supported && this.recognition) {
+            this.recognition.stop();
         }
     }
 }

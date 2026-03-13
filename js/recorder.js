@@ -1,10 +1,8 @@
 // recorder.js
-// Handles Web Audio API and MediaRecorder for voice capture
+// Handles voice capture using browser Web Speech API + AI task extraction
 
 class VoiceRecorder {
     constructor() {
-        this.mediaRecorder = null;
-        this.audioChunks = [];
         this.isRecording = false;
 
         // UI Elements
@@ -35,71 +33,39 @@ class VoiceRecorder {
     }
 
     async startRecording() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-            // Set up MediaRecorder
-            // Prioritize WEBM format for Google Speech API compatibility
-            let options = { mimeType: 'audio/webm' };
-            if (!MediaRecorder.isTypeSupported('audio/webm')) {
-                // Fallback for Safari which often uses audio/mp4
-                options = { mimeType: 'audio/mp4' };
+        // Check if API key is set
+        if (!window.CONFIG.API_KEY) {
+            alert("Please set your API Key first. Click the ⚙️ settings icon.");
+            if (window.App && window.App.openSettings) {
+                window.App.openSettings();
             }
-
-            this.mediaRecorder = new MediaRecorder(stream, options);
-            this.audioChunks = [];
-
-            this.mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    this.audioChunks.push(event.data);
-                }
-            };
-
-            this.mediaRecorder.onstop = () => this.processRecording();
-
-            // Start recording
-            this.mediaRecorder.start();
-            this.isRecording = true;
-
-            // Update UI
-            this.btnRecord.classList.add('recording');
-            this.pulseDot.classList.add('active');
-            this.statusText.textContent = "Listening...";
-
-            this.transcriptionArea.classList.add('hidden');
-            this.aiStatusArea.classList.add('hidden');
-
-        } catch (err) {
-            console.error("Recording failed:", err);
-            alert("Could not access microphone. Please check permissions.");
+            return;
         }
-    }
 
-    stopRecording() {
-        if (this.mediaRecorder && this.isRecording) {
-            this.mediaRecorder.stop();
+        // Check if speech recognition is supported
+        if (!window.SpeechService || !window.SpeechService.supported) {
+            alert("Speech recognition is not supported in this browser. Please use Chrome or Safari.");
+            return;
+        }
+
+        this.isRecording = true;
+
+        // Update UI to recording state
+        this.btnRecord.classList.add('recording');
+        this.pulseDot.classList.add('active');
+        this.statusText.textContent = "Listening...";
+
+        this.transcriptionArea.classList.add('hidden');
+        this.aiStatusArea.classList.add('hidden');
+
+        try {
+            // Use browser's free speech recognition
+            const speechResult = await window.SpeechService.listen('zh-CN');
+
+            // Recording is done
             this.isRecording = false;
-
-            // Stop all tracks to release mic
-            this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
-
-            // Update UI
             this.btnRecord.classList.remove('recording');
             this.pulseDot.classList.remove('active');
-            this.statusText.textContent = "Processing audio...";
-        }
-    }
-
-    async processRecording() {
-        try {
-            const audioBlob = new Blob(this.audioChunks, { type: this.mediaRecorder.mimeType });
-
-            // Convert to Base64
-            const base64Audio = await this.blobToBase64(audioBlob);
-
-            // 1. Send to Speech API
-            this.statusText.textContent = "Transcribing...";
-            const speechResult = await window.SpeechService.transcribe(base64Audio);
 
             if (!speechResult.text) {
                 this.statusText.textContent = "Tap to talk";
@@ -112,13 +78,13 @@ class VoiceRecorder {
             this.langIndicator.textContent = speechResult.language.toUpperCase();
             this.transcriptionArea.classList.remove('hidden');
 
-            // 2. Send to AI Engine
+            // Send to AI Engine for task extraction
             this.statusText.textContent = "Analyzing tasks...";
             this.aiStatusArea.classList.remove('hidden');
 
             const extractedTasks = await window.AIService.extractTasks(speechResult.text);
 
-            // 3. Process Results
+            // Process Results
             if (extractedTasks.length > 0) {
                 this.saveExtractedTasks(extractedTasks);
                 this.addRecentExtraction(speechResult.text, extractedTasks.length);
@@ -129,6 +95,9 @@ class VoiceRecorder {
 
         } catch (err) {
             console.error("Processing pipeline failed:", err);
+            this.isRecording = false;
+            this.btnRecord.classList.remove('recording');
+            this.pulseDot.classList.remove('active');
             this.statusText.textContent = "Error occurred.";
             alert("Failed to process voice note: " + err.message);
         } finally {
@@ -139,17 +108,17 @@ class VoiceRecorder {
         }
     }
 
-    blobToBase64(blob) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                // Remove data URL prefix (e.g. data:audio/webm;base64,)
-                const base64String = reader.result.split(',')[1];
-                resolve(base64String);
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-        });
+    stopRecording() {
+        if (this.isRecording) {
+            this.isRecording = false;
+            // Stop the speech recognition
+            if (window.SpeechService) {
+                window.SpeechService.stop();
+            }
+            this.btnRecord.classList.remove('recording');
+            this.pulseDot.classList.remove('active');
+            this.statusText.textContent = "Processing...";
+        }
     }
 
     saveExtractedTasks(tasksArray) {
