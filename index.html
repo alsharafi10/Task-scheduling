@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Voice Tasks AI</title>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Material Symbols Outlined (Icons) -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <!-- Main Screens Container -->
+    <main id="app-container">
+
+        <!-- Home Screen / Voice Recording -->
+        <section id="screen-home" class="screen active">
+            <header>
+                <h1>Voice Tasks AI</h1>
+                <p>What's on your mind?</p>
+            </header>
+
+            <div class="mic-container">
+                <button id="btn-record" class="mic-button" aria-label="Record voice note">
+                    <span class="material-symbols-outlined mic-icon">mic</span>
+                </button>
+
+                <div id="recording-status" class="status-indicator">
+                    <span class="pulse-dot"></span>
+                    <span class="status-text">Tap to talk</span>
+                </div>
+
+                <!-- Transcription Output Area -->
+                <div id="transcription-area" class="card hidden">
+                    <div class="card-header">
+                        <h3>Transcription</h3>
+                        <span id="lang-indicator" class="badge">Auto</span>
+                    </div>
+                    <p id="transcription-text" class="text-secondary">Listening...</p>
+                </div>
+
+                <!-- AI Processing Status Area -->
+                <div id="ai-status-area" class="card hidden">
+                    <div class="processing-spinner"></div>
+                    <p class="text-secondary">AI is generating tasks...</p>
+                </div>
+            </div>
+
+            <div class="recent-notes-section">
+                <div class="section-header">
+                    <h2>Recent Extractions</h2>
+                </div>
+                <div id="recent-extractions" class="extractions-list">
+                    <!-- Populated via JS -->
+                    <div class="empty-state">No recent tasks extracted.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tasks Screen -->
+        <section id="screen-tasks" class="screen">
+            <header class="header-with-action">
+                <h1>Tasks</h1>
+                <button id="btn-add-task" class="icon-button"><span
+                        class="material-symbols-outlined">add</span></button>
+            </header>
+
+            <div class="filter-scroll">
+                <button class="filter-chip active" data-filter="all">All</button>
+                <button class="filter-chip" data-filter="pending">Pending</button>
+                <button class="filter-chip" data-filter="completed">Completed</button>
+            </div>
+
+            <div id="tasks-list" class="tasks-container">
+                <!-- Tasks will be populated here -->
+            </div>
+        </section>
+
+        <!-- Calendar Screen -->
+        <section id="screen-calendar" class="screen">
+            <header>
+                <h1>Calendar</h1>
+                <h2 id="calendar-month-year">...</h2>
+            </header>
+
+            <div class="calendar-container">
+                <div class="calendar-header">
+                    <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                </div>
+                <div id="calendar-grid" class="calendar-grid">
+                    <!-- Dates populated via JS -->
+                </div>
+            </div>
+
+            <div class="calendar-tasks-section">
+                <h3>Scheduled for <span id="selected-date-label">Today</span></h3>
+                <div id="calendar-tasks-list" class="tasks-container">
+                    <!-- Tasks for selected day -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Projects Screen -->
+        <section id="screen-projects" class="screen">
+            <header class="header-with-action">
+                <h1>Projects</h1>
+                <button id="btn-add-project" class="icon-button"><span
+                        class="material-symbols-outlined">add</span></button>
+            </header>
+
+            <div id="projects-list" class="projects-container">
+                <!-- Projects populated via JS -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+        <button class="nav-item active" data-target="screen-home">
+            <span class="material-symbols-outlined">mic</span>
+            <span>Record</span>
+        </button>
+        <button class="nav-item" data-target="screen-tasks">
+            <span class="material-symbols-outlined">task_alt</span>
+            <span>Tasks</span>
+        </button>
+        <button class="nav-item" data-target="screen-calendar">
+            <span class="material-symbols-outlined">calendar_month</span>
+            <span>Calendar</span>
+        </button>
+        <button class="nav-item" data-target="screen-projects">
+            <span class="material-symbols-outlined">folder</span>
+            <span>Projects</span>
+        </button>
+    </nav>
+
+    <!-- Modal Overlays -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+        <!-- Task Edit Modal -->
+        <div id="task-modal" class="modal hidden">
+            <div class="modal-header">
+                <h2 id="modal-title">Edit Task</h2>
+                <button class="close-modal icon-button"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <div class="modal-body">
+                <form id="task-form">
+                    <input type="hidden" id="task-id">
+
+                    <div class="form-group">
+                        <label for="task-title">Task Title</label>
+                        <input type="text" id="task-title" required placeholder="What needs to be done?">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="task-desc">Description</label>
+                        <textarea id="task-desc" rows="3" placeholder="Additional details..."></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="task-date">Date / Deadline</label>
+                            <input type="date" id="task-date">
+                        </div>
+                        <div class="form-group half">
+                            <label for="task-project">Project</label>
+                            <select id="task-project">
+                                <option value="">None</option>
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="task-completed">
+                        <label for="task-completed">Mark as completed</label>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" id="btn-delete-task" class="btn btn-danger hidden">Delete</button>
+                        <div class="spacer"></div>
+                        <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <!-- Define API key early or in a config -->
+    <script>
+        window.CONFIG = {
+            API_KEY: "AIzaSyA0nNFNe3QbIiQTN7YNQhRQLYykgKqTh0Y"
+        };
+    </script>
+    <script src="js/taskManager.js"></script>
+    <script src="js/projects.js"></script>
+    <script src="js/speechApi.js"></script>
+    <script src="js/aiEngine.js"></script>
+    <script src="js/recorder.js"></script>
+    <script src="js/calendar.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>

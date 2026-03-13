@@ -1,0 +1,591 @@
+:root {
+    /* Color Palette */
+    --bg-color: #0d0f14;
+    --surface-color: #1a1d24;
+    --surface-color-light: #252a34;
+    --primary-color: #6366f1; /* Indigo */
+    --primary-hover: #4f46e5;
+    --secondary-color: #ec4899; /* Pink */
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --border-color: #334155;
+    
+    /* Typography */
+    --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    
+    /* System variables for iOS Safari */
+    --safe-area-bottom: env(safe-area-inset-bottom, 20px);
+    --safe-area-top: env(safe-area-inset-top, 0px);
+    --nav-height: calc(64px + var(--safe-area-bottom));
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    font-family: var(--font-family);
+    min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport height for mobile */
+    overflow-x: hidden;
+    position: relative;
+    padding-bottom: var(--nav-height);
+}
+
+/* App Shell & Screens */
+#app-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.screen {
+    display: none;
+    padding: 24px;
+    padding-top: calc(24px + var(--safe-area-top));
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+.screen.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Typography & Headers */
+h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--text-main), var(--text-muted));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+header p {
+    color: var(--text-muted);
+    font-size: 15px;
+    margin-bottom: 32px;
+}
+
+.header-with-action {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.header-with-action h1 {
+    margin-bottom: 0;
+}
+
+h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text-main);
+}
+
+.text-secondary {
+    color: var(--text-muted);
+}
+
+/* Buttons and Inputs */
+button {
+    font-family: var(--font-family);
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--text-main);
+}
+
+.icon-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--surface-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.icon-button:active {
+    transform: scale(0.95);
+    background-color: var(--surface-color-light);
+}
+
+/* Bottom Navigation */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: var(--nav-height);
+    background-color: rgba(26, 29, 36, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-around;
+    padding-bottom: var(--safe-area-bottom);
+    z-index: 100;
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    color: var(--text-muted);
+    transition: color 0.3s;
+    font-size: 12px;
+    gap: 4px;
+}
+
+.nav-item .material-symbols-outlined {
+    font-size: 24px;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.nav-item.active {
+    color: var(--primary-color);
+}
+
+.nav-item.active .material-symbols-outlined {
+    transform: translateY(-4px);
+    font-variation-settings: 'FILL' 1;
+}
+
+/* Home Screen - Microphone */
+.mic-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 40px 0;
+}
+
+.mic-button {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    z-index: 10;
+}
+
+.mic-button .mic-icon {
+    font-size: 48px;
+    color: white;
+}
+
+.mic-button:active {
+    transform: scale(0.9);
+}
+
+.mic-button.recording {
+    animation: breathing 2s infinite ease-in-out;
+    background: linear-gradient(135deg, var(--danger), #be123c);
+    box-shadow: 0 10px 40px rgba(239, 68, 68, 0.5);
+}
+
+@keyframes breathing {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+    50% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.status-indicator {
+    margin-top: 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 24px;
+}
+
+.pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--text-muted);
+    transition: background-color 0.3s;
+}
+
+.pulse-dot.active {
+    background-color: var(--danger);
+    animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+    from { opacity: 0.5; }
+    to { opacity: 1; }
+}
+
+/* Cards & UI Elements */
+.card {
+    background-color: var(--surface-color);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border-color);
+    width: 100%;
+    margin-top: 24px;
+}
+
+.card.hidden {
+    display: none;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.card-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.badge {
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    background-color: rgba(99, 102, 241, 0.1);
+    color: var(--primary-color);
+}
+
+/* Task Item */
+.task-item {
+    background-color: var(--surface-color);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    display: flex;
+    gap: 12px;
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.task-item:active {
+    transform: scale(0.98);
+}
+
+.task-checkbox {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+
+.task-checkbox.checked {
+    background-color: var(--success);
+    border-color: var(--success);
+}
+
+.task-checkbox.checked::after {
+    content: '';
+    width: 6px;
+    height: 12px;
+    border-right: 2px solid white;
+    border-bottom: 2px solid white;
+    transform: rotate(45deg) translateY(-2px);
+}
+
+.task-content {
+    flex: 1;
+    overflow: hidden;
+}
+
+.task-title {
+    font-weight: 500;
+    margin-bottom: 4px;
+    font-size: 16px;
+}
+
+.task-item.completed .task-title {
+    text-decoration: line-through;
+    color: var(--text-muted);
+}
+
+.task-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+    flex-wrap: wrap;
+}
+
+.task-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.task-meta-item .material-symbols-outlined {
+    font-size: 14px;
+}
+
+.project-tag {
+    color: var(--secondary-color);
+    background-color: rgba(236, 72, 153, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* ... Continuing with Modal, Filters, Forms etc ... */
+/* To save context space, keeping the core styles first. Will expand if needed. */
+
+/* Filter Chips */
+.filter-scroll {
+    display: flex;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 16px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.filter-scroll::-webkit-scrollbar {
+    display: none;
+}
+.filter-chip {
+    padding: 8px 16px;
+    border-radius: 20px;
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    white-space: nowrap;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+.filter-chip.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+/* Modals */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    align-items: flex-end; /* Bottom sheet style on mobile */
+    opacity: 1;
+    transition: opacity 0.3s;
+}
+
+.modal-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.modal {
+    background-color: var(--bg-color);
+    width: 100%;
+    max-height: 90vh;
+    border-radius: 24px 24px 0 0;
+    padding: 24px;
+    padding-bottom: calc(24px + var(--safe-area-bottom));
+    transform: translateY(0);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1);
+    overflow-y: auto;
+}
+
+.modal-overlay.hidden .modal {
+    transform: translateY(100%);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+/* Forms */
+.form-group {
+    margin-bottom: 16px;
+}
+.form-row {
+    display: flex;
+    gap: 16px;
+}
+.half {
+    flex: 1;
+}
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: var(--text-muted);
+}
+input[type="text"], input[type="date"], select, textarea {
+    width: 100%;
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 16px; /* 16px prevents iOS zoom */
+    font-family: var(--font-family);
+    outline: none;
+    transition: border-color 0.2s;
+}
+input:focus, select:focus, textarea:focus {
+    border-color: var(--primary-color);
+}
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 24px;
+}
+.checkbox-group input {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--primary-color);
+}
+.checkbox-group label {
+    margin: 0;
+    font-size: 16px;
+    color: var(--text-main);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 32px;
+}
+.spacer {
+    flex: 1;
+}
+.btn {
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 16px;
+    text-align: center;
+}
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+.btn-secondary {
+    background-color: var(--surface-color-light);
+    color: var(--text-main);
+}
+.btn-danger {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+}
+.btn:hover, .btn:active {
+    filter: brightness(1.1);
+}
+
+.empty-state {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 32px 0;
+    font-size: 15px;
+}
+
+/* Simple Spinner */
+.processing-spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(99, 102, 241, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--primary-color);
+    animation: spin 1s ease-in-out infinite;
+    margin: 0 auto 16px auto;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+#ai-status-area.hidden { display: none; }
+#ai-status-area {
+    text-align: center;
+}
+
+/* Calendar Grid */
+.calendar-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+.calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 14px;
+    color: var(--text-main);
+    cursor: pointer;
+    position: relative;
+    border: 1px solid transparent;
+}
+.calendar-day.empty {
+    visibility: hidden;
+}
+.calendar-day.today {
+    color: var(--primary-color);
+    font-weight: bold;
+}
+.calendar-day.selected {
+    background-color: var(--primary-color);
+    color: white;
+}
+.calendar-day.has-tasks::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: var(--secondary-color);
+}
+.calendar-day.other-month {
+    color: var(--border-color);
+}
