@@ -3,8 +3,11 @@
 
 class SpeechAPI {
     constructor() {
-        this.apiKey = window.CONFIG.API_KEY;
-        this.endpoint = `https://speech.googleapis.com/v1/speech:recognize?key=${this.apiKey}`;
+        // API key is read dynamically from CONFIG at call time
+    }
+
+    get endpoint() {
+        return `https://speech.googleapis.com/v1/speech:recognize?key=${window.CONFIG.API_KEY}`;
     }
 
     /**
