@@ -82,7 +82,11 @@ class VoiceRecorder {
             this.statusText.textContent = "Analyzing tasks...";
             this.aiStatusArea.classList.remove('hidden');
 
-            const extractedTasks = await window.AIService.extractTasks(speechResult.text);
+            const extractedTasks = await window.AIService.extractTasks(speechResult.text, (status) => {
+                // Show retry/fallback status to the user
+                this.statusText.textContent = status;
+                console.log("AI Status:", status);
+            });
 
             // Process Results
             if (extractedTasks.length > 0) {
