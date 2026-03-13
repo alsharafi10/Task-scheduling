@@ -8,6 +8,7 @@ const App = {
     init() {
         this.bindNavigation();
         this.bindModals();
+        this.bindSettings();
 
         this.calendar = new Calendar();
 
@@ -23,6 +24,11 @@ const App = {
         });
 
         console.log("Voice Tasks AI Initialized");
+
+        // Auto-prompt for API key on first visit
+        if (!window.CONFIG.API_KEY) {
+            setTimeout(() => this.openSettings(), 500);
+        }
     },
 
     // --- Navigation ---
@@ -287,6 +293,55 @@ const App = {
         }
 
         this.closeModal();
+    },
+
+    // --- Settings ---
+    bindSettings() {
+        const btn = document.getElementById('btn-settings');
+        const overlay = document.getElementById('settings-overlay');
+        const closeBtn = document.getElementById('btn-close-settings');
+        const saveBtn = document.getElementById('btn-save-settings');
+        const input = document.getElementById('settings-api-key');
+
+        if (btn) {
+            btn.addEventListener('click', () => this.openSettings());
+        }
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => this.closeSettings());
+        }
+        if (overlay) {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) this.closeSettings();
+            });
+        }
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => {
+                const key = input.value.trim();
+                if (key) {
+                    window.CONFIG.API_KEY = key;
+                    // Reinitialize AI engine with new key
+                    window.AIService = new AIEngine();
+                    this.closeSettings();
+                    alert('API Key saved!');
+                } else {
+                    alert('Please enter a valid API Key.');
+                }
+            });
+        }
+    },
+
+    openSettings() {
+        const overlay = document.getElementById('settings-overlay');
+        const input = document.getElementById('settings-api-key');
+        if (input) {
+            input.value = window.CONFIG.API_KEY || '';
+        }
+        overlay.classList.remove('hidden');
+    },
+
+    closeSettings() {
+        const overlay = document.getElementById('settings-overlay');
+        overlay.classList.add('hidden');
     }
 };
 
