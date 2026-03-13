@@ -4,7 +4,7 @@
 class AIEngine {
     constructor() {
         this.apiKey = window.CONFIG.API_KEY;
-        this.endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`;
+        this.endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${this.apiKey}`;
     }
 
     /**
